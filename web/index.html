@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Ergo — Property management made simple for Nigeria">
+  <title>Ergo — Property Management</title>
+  <!-- Tailwind CSS (for landing page) -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <!-- Material Symbols Outlined -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&display=swap"
+    rel="stylesheet" />
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#13ecda",
+            "background-light": "#f6f8f8",
+            "background-dark": "#102220",
+          },
+          fontFamily: {
+            "display": ["Inter", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+
+<body>
+
+  <!-- ============================================
+     LANDING PAGE
+     ============================================ -->
+  <div id="page-landing" class="">
+
+    <!-- ── HERO ──────────────────────────────────────────── -->
+    <style>
+      /* Grid background for hero */
+      .hero-grid-bg {
+        background-color: #fff;
+        background-image:
+          linear-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 0, 0, 0.06) 1px, transparent 1px);
+        background-size: 48px 48px;
+      }
+
+      .dark .hero-grid-bg {
+        background-color: #0f1a19;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+      }
+
+      /* Floating stat cards */
+      .stat-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 18px 22px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+        min-width: 200px;
+      }
+
+      .dark .stat-card {
+        background: #1e2d2b;
+        border-color: #2d3f3d;
+      }
+
+      .alert-card {
+        background: white;
+        border: 1px solid #fecaca;
+        border-radius: 14px;
+        padding: 12px 16px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .dark .alert-card {
+        background: #1e2d2b;
+        border-color: #3d2121;
+      }
+
+      .verified-card {
+        background: white;
+        border: 1px solid #d1fae5;
+        border-radius: 14px;
+        padding: 10px 16px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .dark .verified-card {
+        background: #1e2d2b;
+        border-color: #1a3d2e;
+      }
+
+      /* Trusted logos */
+      .trust-logo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #94a3b8;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: color 0.2s;
+      }
+
+      .trust-logo:hover {
+        color: #64748b;
+      }
+
+      /* Hero CTA buttons */
+      .btn-hero-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #0f172a;
+        color: white;
+        font-weight: 700;
+        font-size: 1rem;
+        padding: 14px 28px;
+        border-radius: 999px;
+        border: none;
+        cursor: pointer;
+        transition: transform 0.15s, box-shadow 0.15s;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+      }
+
+      .btn-hero-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+      }
+
+      .btn-hero-primary:active {
+        transform: translateY(0);
+      }
+
+      .btn-hero-secondary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: white;
+        color: #0f172a;
+        font-weight: 700;
+        font-size: 1rem;
+        padding: 14px 28px;
+        border-radius: 999px;
+        border: 1.5px solid #e2e8f0;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s;
+      }
+
+      .btn-hero-secondary:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+      }
+
+      .dark .btn-hero-secondary {
+        background: #1e2d2b;
+        color: white;
+        border-color: #2d3f3d;
+      }
+
+      /* Landing nav sign-in btn */
+      .btn-signin {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #0f172a;
+        color: white;
+        font-weight: 700;
+        font-size: 0.875rem;
+        padding: 8px 20px;
+        border-radius: 999px;
+        border: none;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      .btn-signin:hover {
+        background: #1e293b;
+      }
+
+      .dark .btn-signin {
+        background: white;
+        color: #0f172a;
+      }
+
+      .dark .btn-signin:hover {
+        background: #f1f5f9;
+      }
+
+      /* Dark mode toggle */
+      .dark-toggle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 1.5px solid #e2e8f0;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background 0.15s;
+      }
+
+      .dark-toggle:hover {
+        background: #f1f5f9;
+      }
+
+      .dark .dark-toggle {
+        border-color: #2d3f3d;
+      }
+
+      .dark .dark-toggle:hover {
+        background: #1e2d2b;
+      }
+    </style>
+
+    <!-- Navigation Bar -->
+    <header id="landing-header"
+      class="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-[#0f1a19]/90 backdrop-blur-md">
+      <div class="max-w-7xl mx-auto px-6 lg:px-10 h-[68px] flex items-center justify-between">
+
+        <!-- Logo -->
+        <div class="flex items-center cursor-pointer" onclick="window.location.hash=''">
+          <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white" style="letter-spacing:-0.03em">
+            Ergo
+          </h1>
+        </div>
+
+        <!-- Nav links -->
+        <nav class="flex items-center gap-8">
+          <a class="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+            href="#">Features</a>
+          <a class="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+            href="#">Pricing</a>
+          <a class="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+            href="#">Resources</a>
+          <a class="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+            href="#">Contact</a>
+        </nav>
+
+        <!-- Right side -->
+        <div class="flex items-center gap-3">
+          <button class="btn-signin" onclick="">
+            Download App
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- Hero Section -->
+      <section class="hero-grid-bg min-h-[680px] relative overflow-hidden">
+        <!-- Radial fade at edges -->
+        <div class="absolute inset-0 pointer-events-none"
+          style="background:radial-gradient(ellipse 70% 60% at 50% 0%, rgba(255,255,255,0) 0%, rgba(255,255,255,0.85) 100%)">
+        </div>
+        <div class="absolute inset-0 pointer-events-none"
+          style="background:radial-gradient(ellipse 70% 40% at 50% 100%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 100%)">
+        </div>
+
+        <div class="relative max-w-4xl mx-auto px-6 pt-20 pb-12 text-center">
+          <!-- Badge -->
+          <div
+            class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-slate-200 shadow-sm text-slate-700 text-xs font-bold uppercase tracking-widest mb-8">
+            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            Property Management Made Simple
+          </div>
+
+          <!-- Heading -->
+          <h1
+            class="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.08] tracking-tight text-slate-900 dark:text-white mb-6">
+            Manage, Automate &amp; Scale Your Property Portfolio
+          </h1>
+
+          <!-- Subtitle -->
+          <p class="text-lg sm:text-xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+            Empowering Nigerian landlords to collect rent in naira, track tenants, and manage
+            maintenance requests all from one beautiful dashboard.
+          </p>
+
+          <!-- CTAs -->
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+            <button class="btn-hero-primary" onclick="">
+              Download App →
+            </button>
+            <button class="btn-hero-secondary" onclick="">
+              Learn More
+            </button>
+          </div>
+
+          <!-- Floating stat cards -->
+          <div class="relative flex flex-wrap items-end justify-center gap-6 mt-4">
+            <!-- Alert card (left) -->
+            <div class="alert-card" style="transform:translateY(12px)">
+              <!-- <div class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center text-sm"></div> -->
+              <div class="text-left">
+                <div class="text-[10px] font-black uppercase tracking-wider text-red-500">Alert</div>
+                <div class="text-sm font-bold text-slate-800 dark:text-white">Overdue Rent</div>
+              </div>
+            </div>
+
+            <!-- Revenue stat card -->
+            <div class="stat-card text-left">
+              <div class="flex items-center justify-between mb-2">
+                <!-- <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-sm"></div> -->
+                <span class="text-xs font-bold text-green-500 bg-green-50 px-2 py-0.5 rounded-full">+12%</span>
+              </div>
+              <div class="text-xs text-slate-500 mb-1">Total Monthly Revenue</div>
+              <div class="text-2xl font-black text-slate-900 dark:text-white">₦2,450,000</div>
+              <div class="mt-3 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                <div class="h-full rounded-full bg-blue-500" style="width:72%"></div>
+              </div>
+            </div>
+
+            <!-- Occupancy stat card -->
+            <div class="stat-card text-left" style="transform:translateY(-8px)">
+              <!-- <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center mb-2 text-sm"></div> -->
+              <div class="text-xs text-slate-500 mb-1">Occupancy Rate</div>
+              <div class="text-2xl font-black text-slate-900 dark:text-white">94%</div>
+              <div class="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                <span class="text-green-500">●</span> 3 new tenants signed this week
+              </div>
+            </div>
+
+            <!-- Maintenance card -->
+            <div class="stat-card text-left" style="transform:translateY(4px)">
+              <!-- <div class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center mb-2 text-sm"></div> -->
+              <div class="text-xs text-slate-500 mb-1">Service Requests</div>
+              <div class="text-xl font-black text-slate-900 dark:text-white">Maintenance</div>
+              <div class="flex gap-1 mt-2">
+                <div class="w-6 h-6 rounded-full bg-slate-200"></div>
+                <div class="w-6 h-6 rounded-full bg-slate-700"></div>
+              </div>
+            </div>
+
+            <!-- Verified card (right) -->
+            <div class="verified-card" style="transform:translateY(-16px)">
+              <div class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white text-xs"></div>
+              <div class="text-left">
+                <div class="text-[10px] font-black uppercase tracking-wider text-green-600">Tenant</div>
+                <div class="text-sm font-bold text-slate-800 dark:text-white">Profile Verified</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Trusted By Section -->
+      <section class="border-t border-slate-100 dark:border-slate-800 py-14 bg-white dark:bg-[#0f1a19]">
+        <div class="max-w-5xl mx-auto px-6 text-center">
+          <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-8">Trusted by Leading Property Groups
+          </p>
+          <div class="flex flex-wrap items-center justify-center gap-10">
+            <div class="trust-logo"> Lagos Estates</div>
+            <div class="trust-logo"> Abuja Rentals</div>
+            <div class="trust-logo"> Prime Properties</div>
+            <div class="trust-logo"> Zebra Homes</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features Section -->
+      <section class="bg-white py-24 border-t border-slate-100">
+        <div class="max-w-7xl mx-auto px-6">
+          <div class="text-center max-w-2xl mx-auto mb-16">
+            <span class="text-xs font-bold uppercase tracking-widest text-slate-400 block mb-3">Core Features</span>
+            <h2 class="text-4xl font-black text-slate-900 leading-tight mb-4">Everything you need to manage properties
+            </h2>
+            <p class="text-slate-500 text-lg">Built for the Nigerian market — compliance, payments, and communication in
+              one place.</p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <!-- Feature 1 -->
+            <div class="border border-slate-200 rounded-2xl p-8 hover:shadow-md hover:border-slate-300 transition-all">
+              <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center mb-6">
+                <svg class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" stroke-width="2"
+                  viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="3" width="7" height="7" rx="1" />
+                  <rect x="3" y="14" width="7" height="7" rx="1" />
+                  <rect x="14" y="14" width="7" height="7" rx="1" />
+                </svg>
+              </div>
+              <h3 class="text-lg font-bold mb-2 text-slate-900">Landlord Portal</h3>
+              <p class="text-slate-500 text-sm leading-relaxed">Full oversight of your portfolio — vacancies,
+                maintenance requests, and financial performance at a glance.</p>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="border border-slate-200 rounded-2xl p-8 hover:shadow-md hover:border-slate-300 transition-all">
+              <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center mb-6">
+                <svg class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" stroke-width="2"
+                  viewBox="0 0 24 24">
+                  <rect x="2" y="5" width="20" height="14" rx="2" />
+                  <path d="M2 10h20" />
+                </svg>
+              </div>
+              <h3 class="text-lg font-bold mb-2 text-slate-900">Rent Collection (₦)</h3>
+              <p class="text-slate-500 text-sm leading-relaxed">Automated rent collection in Naira. Pay via transfer,
+                card, or USSD with instant reconciliation.</p>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="border border-slate-200 rounded-2xl p-8 hover:shadow-md hover:border-slate-300 transition-all">
+              <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center mb-6">
+                <svg class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" stroke-width="2"
+                  viewBox="0 0 24 24">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+              </div>
+              <h3 class="text-lg font-bold mb-2 text-slate-900">Instant Tenant Invites</h3>
+              <p class="text-slate-500 text-sm leading-relaxed">Onboard tenants in seconds. Send secure links via
+                WhatsApp or email for digital KYC and onboarding.</p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- CTA Section -->
+      <section class="py-24 bg-white border-t border-slate-100">
+        <div class="max-w-3xl mx-auto px-6 text-center">
+          <h2 class="text-4xl font-black text-slate-900 mb-4">Ready to simplify your property management?</h2>
+          <p class="text-slate-500 text-lg mb-10">Join landlords across Lagos, Abuja, and Port Harcourt who are already
+            using Ergo.</p>
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button class="btn-hero-primary" onclick="">Download App →</button>
+            <button class="btn-hero-secondary">Learn More</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-100 py-10 bg-white">
+      <div class="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <span class="text-xl font-black text-slate-900" style="letter-spacing:-0.03em">Ergo</span>
+        <p class="text-xs text-slate-400">© 2026 Ergo Property Management. Built for the Nigerian Market.</p>
+        <div class="flex items-center gap-5 text-xs text-slate-500">
+          <a href="#" class="hover:text-slate-900 transition-colors">Privacy</a>
+          <a href="#" class="hover:text-slate-900 transition-colors">Terms</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+
+
+  <!-- Scripts -->
+  <script>
+    console.log("Ergo Landing Page Initialized.");
+  </script>
+</body>
+
+</html>
