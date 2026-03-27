@@ -54,7 +54,7 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 		"phone":     req.Phone,
 	}
 
-	_, _, err = h.client.From("profiles").Insert(profile, false, "", "", "").Execute()
+	_, _, err = h.client.From("users").Insert(profile, false, "", "", "").Execute()
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "Failed to create profile: "+err.Error())
 		return
@@ -98,7 +98,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	// Get profile for role info
 	userID := session.User.ID.String()
-	data, _, err := h.client.From("profiles").Select("*", "exact", false).Eq("id", userID).Execute()
+	data, _, err := h.client.From("users").Select("*", "exact", false).Eq("id", userID).Execute()
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "Failed to fetch profile")
 		return
@@ -177,7 +177,7 @@ func (h *AuthHandler) AcceptInvite(w http.ResponseWriter, r *http.Request) {
 		"email":     req.Email,
 		"phone":     req.Phone,
 	}
-	h.client.From("profiles").Insert(profile, false, "", "", "").Execute()
+	h.client.From("users").Insert(profile, false, "", "", "").Execute()
 
 	// Link tenant to unit
 	update := map[string]interface{}{

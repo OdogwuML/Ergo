@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/ergo/backend/internal/models"
@@ -16,6 +17,7 @@ func respondJSON(w http.ResponseWriter, status int, data interface{}) {
 
 // respondError writes a JSON error response
 func respondError(w http.ResponseWriter, status int, message string) {
+	log.Printf("[API ERROR] %d: %s", status, message)
 	respondJSON(w, status, models.APIResponse{
 		Success: false,
 		Error:   message,
