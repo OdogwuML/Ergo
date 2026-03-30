@@ -1,13 +1,19 @@
 package handlers
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/ergo/backend/internal/middleware"
 	"github.com/ergo/backend/internal/models"
+	"github.com/ergo/backend/internal/utils"
+	"github.com/resend/resend-go/v2"
+	storage_go "github.com/supabase-community/storage-go"
 	postgrest "github.com/supabase-community/postgrest-go"
 	supabase "github.com/supabase-community/supabase-go"
 )
@@ -36,7 +42,7 @@ func (h *InvitationsHandler) SendInvite(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Verify the unit belongs to a building owned by this landlord
-	uData, _, err := h.client.From("units").Select("*, buildings!inner(landlord_id)", "exact", false).Eq("id", req.UnitID).Execute()
+	uData, _, err := h.client.From("units").Select("*, buildings!inner(landlord_id, name, address)", "exact", false).Eq("id", req.UnitID).Execute()
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "Failed to verify unit")
 		return
@@ -46,6 +52,8 @@ func (h *InvitationsHandler) SendInvite(w http.ResponseWriter, r *http.Request) 
 		models.Unit
 		Buildings struct {
 			LandlordID string `json:"landlord_id"`
+			Name       string `json:"name"`
+			Address    string `json:"address"`
 		} `json:"buildings"`
 	}
 	json.Unmarshal(uData, &units)
@@ -60,9 +68,49 @@ func (h *InvitationsHandler) SendInvite(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Generate unique invite token
-	token := generateToken()
+	// 1. Get Landlord Name for the lease
+	profData, _, _ := h.client.From("users").Select("full_name", "exact", false).Eq("id", userID).Execute()
+	var profiles []struct {
+		FullName string `json:"full_name"`
+	}
+	json.Unmarshal(profData, &profiles)
+	landlordName := "Landlord"
+	if len(profiles) > 0 {
+		landlordName = profiles[0].FullName
+	}
 
+	// 2. Prepare Lease Data
+	unit := units[0]
+	leaseData := utils.LeaseData{
+		LandlordName: landlordName,
+		TenantName:   req.FullName,
+		BuildingName: unit.Buildings.Name, // This needs buildings(name) in select
+		Address:      unit.Buildings.Address,
+		UnitNumber:   unit.UnitNumber,
+		RentAmount:   float64(unit.RentAmount) / 100,
+		StartDate:    req.LeaseStart,
+		EndDate:      req.LeaseEnd,
+	}
+
+	// 3. Generate PDF
+	pdfBytes, err := utils.GenerateLeasePDF(leaseData)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to generate lease PDF")
+		return
+	}
+
+	// 4. Upload to Supabase Storage
+	token := generateToken()
+	fileName := fmt.Sprintf("leases/%s_%s.pdf", req.UnitID, token[:8])
+	contentType := "application/pdf"
+	_, err = h.client.Storage.UploadFile("documents", fileName, bytes.NewReader(pdfBytes), storage_go.FileOptions{ContentType: &contentType})
+	if err != nil {
+		// Log error but proceed with invitation if only storage fails
+		fmt.Printf("Storage upload failed: %v\n", err)
+	}
+	fileURL := h.client.Storage.GetPublicUrl("documents", fileName).SignedURL
+
+	// 5. Create Invitation Record
 	invite := map[string]interface{}{
 		"unit_id":     req.UnitID,
 		"landlord_id": userID,
@@ -81,13 +129,36 @@ func (h *InvitationsHandler) SendInvite(w http.ResponseWriter, r *http.Request) 
 	var created []models.Invitation
 	json.Unmarshal(data, &created)
 
-	// TODO: Send email via Resend and/or SMS via Termii with the invite link
-	// The invite link would be: APP_URL/invite?token=<token>
+	// 6. Record Document in DB
+	doc := map[string]interface{}{
+		"uploaded_by": userID,
+		"unit_id":     req.UnitID,
+		"name":        "Lease Agreement - " + unit.UnitNumber,
+		"type":        "lease_agreement",
+		"file_url":    fileURL,
+		"file_size":   len(pdfBytes),
+	}
+	h.client.From("documents").Insert(doc, false, "", "", "").Execute()
+
+	// 7. Send Email via Resend
+	resendKey := os.Getenv("RESEND_API_KEY")
+	if resendKey != "" && req.Email != "" {
+		client := resend.NewClient(resendKey)
+		inviteLink := fmt.Sprintf("https://ergo-app.vercel.app/invite?token=%s", token)
+		
+		params := &resend.SendEmailRequest{
+			From:    "Ergo <onboarding@resend.dev>", // Or your verified domain
+			To:      []string{req.Email},
+			Subject: "Invitation to Join Ergo - " + unit.UnitNumber,
+			Html:    fmt.Sprintf("<h1>Welcome to your new home!</h1><p>%s has invited you to join Ergo and sign your lease for <strong>%s</strong>.</p><p>Click here to accept: <a href='%s'>Accept Invitation</a></p>", landlordName, unit.UnitNumber, inviteLink),
+		}
+		client.Emails.Send(params)
+	}
 
 	respondJSON(w, http.StatusCreated, models.APIResponse{
 		Success: true,
 		Data:    created[0],
-		Message: "Invitation sent successfully",
+		Message: "Invitation sent successfully with generated lease",
 	})
 }
 

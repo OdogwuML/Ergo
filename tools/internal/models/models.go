@@ -5,13 +5,15 @@ import "time"
 // Profile extends Supabase auth.users with app-specific data
 type Profile struct {
 	ID        string    `json:"id"`
-	Role      string    `json:"role"` // "landlord" or "tenant"
-	FullName  string    `json:"full_name"`
-	Email     string    `json:"email"`
-	Phone     *string   `json:"phone,omitempty"`
-	AvatarURL *string   `json:"avatar_url,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	Role                   string    `json:"role"` // "landlord" or "tenant"
+	FullName               string    `json:"full_name"`
+	Email                  string    `json:"email"`
+	Phone                  *string   `json:"phone,omitempty"`
+	AvatarURL              *string   `json:"avatar_url,omitempty"`
+	PaystackSubaccountCode *string   `json:"paystack_subaccount_code,omitempty"`
+	PaymentLink            *string   `json:"payment_link,omitempty"`
+	CreatedAt              time.Time `json:"created_at"`
+	UpdatedAt              time.Time `json:"updated_at"`
 }
 
 // Building represents a property managed by a landlord
@@ -68,8 +70,8 @@ type Payment struct {
 	Currency             string     `json:"currency"`
 	Status               string     `json:"status"` // "pending", "successful", "failed"
 	PaymentMethod        *string    `json:"payment_method,omitempty"`
-	InterswitchReference    *string    `json:"interswitch_reference,omitempty"`
-	InterswitchTransactionID *string   `json:"interswitch_transaction_id,omitempty"`
+	PaystackReference    *string    `json:"paystack_reference,omitempty"`
+	PaystackTransactionID *string   `json:"paystack_transaction_id,omitempty"`
 	Period               string     `json:"period"` // e.g. "Jan 2026"
 	PaidAt               *time.Time `json:"paid_at,omitempty"`
 	CreatedAt            time.Time  `json:"created_at"`

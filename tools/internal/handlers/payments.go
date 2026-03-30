@@ -6,6 +6,7 @@ import (
 
 	"github.com/ergo/backend/internal/middleware"
 	"github.com/ergo/backend/internal/models"
+	"github.com/ergo/backend/internal/utils"
 	postgrest "github.com/supabase-community/postgrest-go"
 	supabase "github.com/supabase-community/supabase-go"
 )
@@ -18,7 +19,7 @@ func NewPaymentsHandler(client *supabase.Client) *PaymentsHandler {
 	return &PaymentsHandler{client: client}
 }
 
-// InitializePayment starts an Interswitch payment for a tenant
+// InitializePayment starts a Paystack payment for a tenant
 func (h *PaymentsHandler) InitializePayment(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r)
 
@@ -33,8 +34,8 @@ func (h *PaymentsHandler) InitializePayment(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Get unit details (verify tenant owns this unit)
-	data, _, err := h.client.From("units").Select("*, buildings(id, name)", "exact", false).Eq("id", req.UnitID).Eq("tenant_id", userID).Execute()
+	// Get unit details (verify tenant owns this unit) and the landlord_id
+	data, _, err := h.client.From("units").Select("*, buildings(id, name, landlord_id)", "exact", false).Eq("id", req.UnitID).Eq("tenant_id", userID).Execute()
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "Failed to fetch unit")
 		return
@@ -43,8 +44,9 @@ func (h *PaymentsHandler) InitializePayment(w http.ResponseWriter, r *http.Reque
 	var units []struct {
 		models.Unit
 		Buildings struct {
-			ID   string `json:"id"`
-			Name string `json:"name"`
+			ID         string `json:"id"`
+			Name       string `json:"name"`
+			LandlordID string `json:"landlord_id"`
 		} `json:"buildings"`
 	}
 	json.Unmarshal(data, &units)
@@ -76,25 +78,55 @@ func (h *PaymentsHandler) InitializePayment(w http.ResponseWriter, r *http.Reque
 	var payments []models.Payment
 	json.Unmarshal(payData, &payments)
 
-	// TODO: Initialize Interswitch transaction using the payment reference
-	// For now, return the payment record — Interswitch integration will be added
-	// when the API keys are available
+	// Fetch the landlord's subaccount code
+	landlordData, _, err := h.client.From("profiles").Select("paystack_subaccount_code", "exact", false).Eq("id", unit.Buildings.LandlordID).Execute()
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to fetch landlord profile")
+		return
+	}
+
+	var landlords []struct {
+		PaystackSubaccountCode *string `json:"paystack_subaccount_code"`
+	}
+	json.Unmarshal(landlordData, &landlords)
+
+	if len(landlords) == 0 || landlords[0].PaystackSubaccountCode == nil {
+		respondError(w, http.StatusBadRequest, "Landlord has not set up bank details to receive payments")
+		return
+	}
+
+	subaccountCode := *landlords[0].PaystackSubaccountCode
+
+	// Fetch tenant email
+	tenantData, _, err := h.client.From("profiles").Select("email", "exact", false).Eq("id", userID).Execute()
+	var tenants []struct {
+		Email string `json:"email"`
+	}
+	json.Unmarshal(tenantData, &tenants)
+	tenantEmail := tenants[0].Email
+
+	authURL, accessCode, err := utils.InitializeSplitPayment(tenantEmail, float64(unit.RentAmount)/100, payments[0].ID, subaccountCode)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to initialize Paystack transaction: "+err.Error())
+		return
+	}
 
 	respondJSON(w, http.StatusCreated, models.APIResponse{
 		Success: true,
 		Data: map[string]interface{}{
 			"payment":           payments[0],
 			"amount_naira":      float64(unit.RentAmount) / 100,
-			"authorization_url": "", // Will be filled by Interswitch
+			"authorization_url": authURL,
+			"access_code":       accessCode,
 			"reference":         payments[0].ID,
 		},
-		Message: "Payment initiated (Interswitch integration pending)",
+		Message: "Payment checkout initiated",
 	})
 }
 
-// InterswitchWebhook handles Interswitch payment callbacks
-func (h *PaymentsHandler) InterswitchWebhook(w http.ResponseWriter, r *http.Request) {
-	// TODO: Verify Interswitch webhook signature
+// PaystackWebhook handles Paystack payment callbacks
+func (h *PaymentsHandler) PaystackWebhook(w http.ResponseWriter, r *http.Request) {
+	// TODO: Verify Paystack webhook signature
 	// TODO: Parse the event and update the payment status
 
 	var event map[string]interface{}
@@ -103,8 +135,43 @@ func (h *PaymentsHandler) InterswitchWebhook(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// Acknowledge receipt immediately (Interswitch expects 200)
+	// Acknowledge receipt immediately (Paystack expects 200)
 	w.WriteHeader(http.StatusOK)
+}
+
+// SetupBank handles the landlord submitting bank details to create a Paystack Subaccount
+func (h *PaymentsHandler) SetupBank(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r)
+
+	var req models.BankSetupRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	subaccountCode, err := utils.CreateSubaccount(req.BusinessName, req.BankCode, req.AccountNumber)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to create Paystack subaccount: "+err.Error())
+		return
+	}
+
+	update := map[string]interface{}{
+		"paystack_subaccount_code": subaccountCode,
+	}
+
+	_, _, err = h.client.From("profiles").Update(update, "", "").Eq("id", userID).Execute()
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to save linked bank account")
+		return
+	}
+
+	respondJSON(w, http.StatusOK, models.APIResponse{
+		Success: true,
+		Message: "Bank details verified and linked successfully",
+		Data: map[string]string{
+			"subaccount_code": subaccountCode,
+		},
+	})
 }
 
 // ListPayments returns payment history (scoped by role)

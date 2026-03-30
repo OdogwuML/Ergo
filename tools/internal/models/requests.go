@@ -65,9 +65,12 @@ type UpdateUnitRequest struct {
 // --- Invitation Request ---
 
 type SendInviteRequest struct {
-	UnitID string `json:"unit_id"`
-	Email  string `json:"email,omitempty"`
-	Phone  string `json:"phone,omitempty"`
+	UnitID     string `json:"unit_id"`
+	Email      string `json:"email,omitempty"`
+	Phone      string `json:"phone,omitempty"`
+	FullName   string `json:"full_name"`
+	LeaseStart string `json:"lease_start"`
+	LeaseEnd   string `json:"lease_end"`
 }
 
 // --- Payment Request ---
@@ -81,6 +84,14 @@ type InitializePaymentResponse struct {
 	AuthorizationURL string `json:"authorization_url"`
 	Reference        string `json:"reference"`
 	AccessCode       string `json:"access_code"`
+}
+
+// --- Bank Setup Request ---
+
+type BankSetupRequest struct {
+	BankCode      string `json:"bank_code"`
+	AccountNumber string `json:"account_number"`
+	BusinessName  string `json:"business_name"`
 }
 
 // --- Maintenance Request ---

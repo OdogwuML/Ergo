@@ -64,7 +64,7 @@ func (h *DashboardHandler) LandlordDashboard(w http.ResponseWriter, r *http.Requ
 	}
 
 	// Recent payments
-	rpData, _, _ := h.client.From("payments").Select("*, profiles!payments_tenant_id_fkey(full_name), buildings(name), units(unit_number)", "exact", false).Eq("status", "successful").Order("created_at", &postgrest.OrderOpts{Ascending: false}).Limit(5, "").Execute()
+	rpData, _, _ := h.client.From("payments").Select("*, users!payments_tenant_id_fkey(full_name), buildings(name), units(unit_number)", "exact", false).Eq("status", "successful").Order("created_at", &postgrest.OrderOpts{Ascending: false}).Limit(5, "").Execute()
 	var recentPayments []json.RawMessage
 	json.Unmarshal(rpData, &recentPayments)
 
@@ -89,7 +89,7 @@ func (h *DashboardHandler) TenantDashboard(w http.ResponseWriter, r *http.Reques
 	userID := middleware.GetUserID(r)
 
 	// Get profile
-	profData, _, _ := h.client.From("profiles").Select("*", "exact", false).Eq("id", userID).Execute()
+	profData, _, _ := h.client.From("users").Select("*", "exact", false).Eq("id", userID).Execute()
 	var profiles []models.Profile
 	json.Unmarshal(profData, &profiles)
 

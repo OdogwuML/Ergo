@@ -173,7 +173,7 @@ func (h *BuildingsHandler) ListUnits(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get units with tenant profiles
-	data, _, err := h.client.From("units").Select("*, profiles!units_tenant_id_fkey(full_name, email, phone)", "exact", false).Eq("building_id", buildingID).Order("unit_number", &postgrest.OrderOpts{Ascending: true}).Execute()
+	data, _, err := h.client.From("units").Select("*, users!units_tenant_id_fkey(full_name, email, phone)", "exact", false).Eq("building_id", buildingID).Order("unit_number", &postgrest.OrderOpts{Ascending: true}).Execute()
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "Failed to fetch units")
 		return
