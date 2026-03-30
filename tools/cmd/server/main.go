@@ -13,16 +13,19 @@ import (
 )
 
 func main() {
-	// Load .env file (ignored if not found, e.g. in production)
-	_ = godotenv.Load("../.env")
+	// Load .env file
+	err := godotenv.Load("../.env")
+	if err != nil {
+		fmt.Println("⚠️  Warning: No .env file found at ../.env. Relying on system environment variables.")
+	}
 
-	// Load environment variables
-	supabaseURL := getEnv("SUPABASE_URL", "https://mnwjsmkawisyisauxeyy.supabase.co")
-	supabaseKey := getEnv("SUPABASE_ANON_KEY", "")
+	// Load environment variables (strict)
+	supabaseURL := os.Getenv("SUPABASE_URL")
+	supabaseKey := os.Getenv("SUPABASE_ANON_KEY")
 	port := getEnv("PORT", "8080")
 
-	if supabaseKey == "" {
-		log.Fatal("SUPABASE_ANON_KEY is required")
+	if supabaseURL == "" || supabaseKey == "" {
+		log.Fatal("SUPABASE_URL and SUPABASE_ANON_KEY are both required!")
 	}
 
 	// Initialize Supabase client
@@ -50,7 +53,7 @@ func main() {
 	mux.HandleFunc("POST /api/v1/auth/login", authHandler.Login)
 	mux.HandleFunc("POST /api/v1/auth/accept-invite", authHandler.AcceptInvite)
 	mux.HandleFunc("GET /api/v1/invitations/verify", invitationsHandler.GetInviteByToken)
-	mux.HandleFunc("POST /api/v1/webhooks/interswitch", paymentsHandler.InterswitchWebhook)
+	mux.HandleFunc("POST /api/v1/webhooks/paystack", paymentsHandler.PaystackWebhook)
 
 	// ============================================
 	// AUTHENTICATED ROUTES - v1
@@ -74,6 +77,7 @@ func main() {
 	// --- Payments ---
 	mux.Handle("POST /api/v1/payments/initialize", authMw(mw.RequireRole("tenant")(http.HandlerFunc(paymentsHandler.InitializePayment))))
 	mux.Handle("GET /api/v1/payments", authMw(http.HandlerFunc(paymentsHandler.ListPayments)))
+	mux.Handle("POST /api/v1/bank/setup", authMw(mw.RequireRole("landlord")(http.HandlerFunc(paymentsHandler.SetupBank))))
 
 	// --- Invitations (Landlord) ---
 	mux.Handle("POST /api/v1/invitations", authMw(mw.RequireRole("landlord")(http.HandlerFunc(invitationsHandler.SendInvite))))
@@ -97,9 +101,9 @@ func main() {
 	// Wrap everything with CORS
 	handler := mw.CORSMiddleware(mux)
 
-	fmt.Printf("🚀 Ergo server running on http://localhost:%s\n", port)
-	fmt.Println("📋 API endpoints: 22 routes registered")
-	fmt.Println("🗄️  Database: Supabase (manged)")
+	fmt.Printf("Ergo server running on http://localhost:%s\n", port)
+	fmt.Println("API endpoints: 22 routes registered")
+	fmt.Println("Database: Supabase (manged)")
 	log.Fatal(http.ListenAndServe(":"+port, handler))
 }
 

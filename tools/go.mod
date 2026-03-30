@@ -3,7 +3,9 @@ module github.com/ergo/backend
 go 1.25.0
 
 require (
+	github.com/go-pdf/fpdf v0.9.0
 	github.com/joho/godotenv v1.5.1
+	github.com/resend/resend-go/v2 v2.28.0
 	github.com/supabase-community/gotrue-go v1.2.0
 	github.com/supabase-community/postgrest-go v0.0.11
 	github.com/supabase-community/supabase-go v0.0.4

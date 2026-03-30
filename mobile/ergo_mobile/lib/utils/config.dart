@@ -1,4 +1,4 @@
 class Config {
-  // Using the physical device's connected local IP from flutter devices output.
-  static const String apiBaseUrl = 'http://192.168.1.123:8080/api/v1';
+  // Using the laptop's local network IP for external connectivity
+  static const String apiBaseUrl = 'http://10.131.60.115:8080/api/v1';
 }

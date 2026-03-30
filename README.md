@@ -20,7 +20,7 @@ Ergo is a modern property management platform built for the Nigerian market. It 
 
 ### For Tenants
 - **Tenant Dashboard** — Quick view of tenancy, rent due, and payment history
-- **Rent Payment** — Pay rent securely via Interswitch (card, transfer, USSD) in ₦ Naira
+- **Rent Payment** — Pay rent securely via Paystack (card, transfer, USSD) in ₦ Naira
 - **Lease Access** — View and download auto-generated lease agreement at any time
 - **Maintenance Requests** — Submit and track repair requests for their unit
 - **Payment Receipts** — Every payment is automatically logged and downloadable
@@ -37,7 +37,7 @@ Ergo is a modern property management platform built for the Nigerian market. It 
 | **Backend** | Go (Golang) |
 | **Database & Auth** | Supabase (PostgreSQL + RLS) |
 | **Frontend** | HTML / CSS / Vanilla JS (SPA) |
-| **Payments** | Interswitch |
+| **Payments** | Paystack |
 | **Email Notifications** | Resend |
 | **SMS Notifications** | Termii |
 | **Push Notifications** | Firebase (FCM) |
@@ -104,10 +104,9 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-# Interswitch
-INTERSWITCH_CLIENT_ID=
-INTERSWITCH_SECRET_KEY=
-INTERSWITCH_MAC_KEY=
+# Paystack
+PAYSTACK_SECRET_KEY=
+PAYSTACK_PUBLIC_KEY=
 
 # Resend (Email)
 RESEND_API_KEY=re_...
@@ -146,7 +145,7 @@ All API routes are under `/api`. Authenticated routes require a `Bearer` token i
 | `POST` | `/api/auth/login` | ❌ | Log in and receive JWT |
 | `POST` | `/api/auth/accept-invite` | ❌ | Accept tenant invitation |
 | `GET` | `/api/invitations/verify` | ❌ | Verify an invite token |
-| `POST` | `/api/webhooks/interswitch` | ❌ | Interswitch payment webhook |
+| `POST` | `/api/webhooks/paystack` | ❌ | Paystack payment webhook |
 | `GET` | `/api/dashboard/landlord` | ✅ landlord | Landlord dashboard stats |
 | `GET` | `/api/dashboard/tenant` | ✅ tenant | Tenant dashboard data |
 | `GET/POST` | `/api/buildings` | ✅ landlord | List / create buildings |
