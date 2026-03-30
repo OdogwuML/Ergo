@@ -80,7 +80,6 @@ ergo/
 - A [Supabase](https://supabase.com) project
 - A [Paystack](https://paystack.com) account
 - A [Resend](https://resend.com) account (email)
-- A [Termii](https://termii.com) account (SMS)
 
 ### 1. Clone the Repository
 
@@ -106,8 +105,6 @@ PAYSTACK_PUBLIC_KEY=
 # Resend (Email)
 RESEND_API_KEY=re_...
 
-# Termii (SMS)
-TERMII_API_KEY=...
 
 # App
 APP_URL=http://localhost:8080
