@@ -12,7 +12,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  String _selectedRole = 'landlord'; // 'landlord' or 'tenant'
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -102,37 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    const Text(
-                      'I am a...',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF334155),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _RoleSelector(
-                            title: 'Landlord',
-                            icon: Icons.domain,
-                            isSelected: _selectedRole == 'landlord',
-                            onTap: () => setState(() => _selectedRole = 'landlord'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _RoleSelector(
-                            title: 'Tenant',
-                            icon: Icons.person_pin_circle,
-                            isSelected: _selectedRole == 'tenant',
-                            onTap: () => setState(() => _selectedRole = 'tenant'),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
+
                     const Text('Email Address', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                     const SizedBox(height: 6),
                     TextFormField(
@@ -238,56 +207,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RoleSelector extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _RoleSelector({
-    required this.title,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white : const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? AppTheme.primary : const Color(0xFFF1F5F9),
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected
-              ? [BoxShadow(color: AppTheme.primary.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))]
-              : [],
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: isSelected ? AppTheme.primary : const Color(0xFF64748B)),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? AppTheme.primary : const Color(0xFF64748B),
-              ),
-            ),
-          ],
         ),
       ),
     );
