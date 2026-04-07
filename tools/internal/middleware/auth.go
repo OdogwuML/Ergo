@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -17,8 +18,16 @@ const (
 	UserRoleKey contextKey = "user_role"
 )
 
+// supabaseUser represents the user object returned by Supabase Auth
+type supabaseUser struct {
+	ID string `json:"id"`
+}
+
 // AuthMiddleware validates the JWT token via Supabase Auth
 func AuthMiddleware(supabaseURL, serviceKey string) func(http.Handler) http.Handler {
+	// Create a single service-key client for DB lookups
+	dbClient, _ := supabase.NewClient(supabaseURL, serviceKey, &supabase.ClientOptions{})
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
@@ -33,24 +42,43 @@ func AuthMiddleware(supabaseURL, serviceKey string) func(http.Handler) http.Hand
 				return
 			}
 
-			// Create an authenticated client using the user's token
-			userClient, err := supabase.NewClient(supabaseURL, token, &supabase.ClientOptions{})
+			// Validate the token by calling Supabase Auth directly
+			req, err := http.NewRequest("GET", supabaseURL+"/auth/v1/user", nil)
 			if err != nil {
-				writeError(w, http.StatusUnauthorized, "Invalid token")
+				writeError(w, http.StatusInternalServerError, "Internal error")
 				return
 			}
+			req.Header.Set("Authorization", "Bearer "+token)
+			req.Header.Set("apikey", serviceKey)
 
-			// Use the token to get user info
-			user, err := userClient.Auth.GetUser()
+			resp, err := http.DefaultClient.Do(req)
 			if err != nil {
+				writeError(w, http.StatusUnauthorized, "Failed to validate token")
+				return
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
 				writeError(w, http.StatusUnauthorized, "Invalid or expired token")
 				return
 			}
 
-			userID := user.ID.String()
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				writeError(w, http.StatusInternalServerError, "Failed to read auth response")
+				return
+			}
 
-			// Get user profile to determine role
-			data, _, err := userClient.From("users").Select("role", "exact", false).Eq("id", userID).Execute()
+			var user supabaseUser
+			if err := json.Unmarshal(body, &user); err != nil || user.ID == "" {
+				writeError(w, http.StatusUnauthorized, "Invalid token payload")
+				return
+			}
+
+			userID := user.ID
+
+			// Get user profile to determine role using the service key client
+			data, _, err := dbClient.From("users").Select("role", "exact", false).Eq("id", userID).Execute()
 			if err != nil {
 				writeError(w, http.StatusUnauthorized, "User profile not found")
 				return
@@ -107,3 +135,4 @@ func writeError(w http.ResponseWriter, status int, msg string) {
 	w.WriteHeader(status)
 	fmt.Fprintf(w, `{"success":false,"error":"%s"}`, msg)
 }
+

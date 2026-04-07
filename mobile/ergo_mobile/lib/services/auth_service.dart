@@ -20,6 +20,9 @@ class AuthService {
       await prefs.setString(_tokenKey, token);
       await prefs.setString(_userRoleKey, user['role'] as String);
       await prefs.setString(_userIdKey, user['id'] as String);
+      if (user['full_name'] != null) {
+        await prefs.setString('user_name', user['full_name'] as String);
+      }
     }
   }
 
