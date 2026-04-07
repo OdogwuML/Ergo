@@ -50,7 +50,7 @@ func AuthMiddleware(supabaseURL, serviceKey string) func(http.Handler) http.Hand
 			userID := user.ID.String()
 
 			// Get user profile to determine role
-			data, _, err := userClient.From("profiles").Select("role", "exact", false).Eq("id", userID).Execute()
+			data, _, err := userClient.From("users").Select("role", "exact", false).Eq("id", userID).Execute()
 			if err != nil {
 				writeError(w, http.StatusUnauthorized, "User profile not found")
 				return

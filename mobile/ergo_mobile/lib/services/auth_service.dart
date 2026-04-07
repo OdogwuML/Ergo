@@ -23,7 +23,7 @@ class AuthService {
     }
   }
 
-  Future<bool> login(String email, String password) async {
+  Future<String?> login(String email, String password) async {
     try {
       final response = await http.post(
         Uri.parse('${Config.apiBaseUrl}/auth/login'),
@@ -34,21 +34,21 @@ class AuthService {
         }),
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true) {
-          await _saveSession(data);
-          return true;
-        }
+      final data = jsonDecode(response.body);
+      
+      if ((response.statusCode == 200 || response.statusCode == 201) && data['success'] == true) {
+        await _saveSession(data);
+        return null; // Success
       }
-      return false;
+      
+      return data['error'] ?? 'Login failed. Please check your credentials.';
     } catch (e) {
-      print('Login error: \$e');
-      return false;
+      print('Login error: $e');
+      return 'Connection error. Please check your network and try again.';
     }
   }
 
-  Future<bool> signUp({
+  Future<String?> signUp({
     required String fullName,
     required String email,
     required String phone,
@@ -67,17 +67,17 @@ class AuthService {
         }),
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true) {
-          await _saveSession(data);
-          return true;
-        }
+      final data = jsonDecode(response.body);
+
+      if ((response.statusCode == 200 || response.statusCode == 201) && data['success'] == true) {
+        await _saveSession(data);
+        return null; // Success
       }
-      return false;
+
+      return data['error'] ?? 'Signup failed. Please try again.';
     } catch (e) {
-      print('Signup error: \$e');
-      return false;
+      print('Signup error: $e');
+      return 'Connection error. Please check your network and try again.';
     }
   }
 

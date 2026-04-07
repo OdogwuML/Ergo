@@ -21,11 +21,11 @@ func main() {
 
 	// Load environment variables (strict)
 	supabaseURL := os.Getenv("SUPABASE_URL")
-	supabaseKey := os.Getenv("SUPABASE_ANON_KEY")
+	supabaseKey := os.Getenv("SUPABASE_SERVICE_KEY")
 	port := getEnv("PORT", "8080")
 
 	if supabaseURL == "" || supabaseKey == "" {
-		log.Fatal("SUPABASE_URL and SUPABASE_ANON_KEY are both required!")
+		log.Fatal("SUPABASE_URL and SUPABASE_SERVICE_KEY are both required!")
 	}
 
 	// Initialize Supabase client

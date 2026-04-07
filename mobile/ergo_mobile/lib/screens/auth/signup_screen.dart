@@ -35,7 +35,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
     setState(() => _isLoading = true);
 
-    final success = await _authService.signUp(
+    final errorMessage = await _authService.signUp(
       fullName: _nameController.text.trim(),
       email: _emailController.text.trim(),
       phone: _phoneController.text.trim(),
@@ -44,16 +44,23 @@ class _SignupScreenState extends State<SignupScreen> {
 
     setState(() => _isLoading = false);
 
-    if (success && mounted) {
-      // Navigate to dashboard
+    if (errorMessage == null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account created successfully! Please log in.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      
+      // Navigate to login page
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const LandlordDashboardScreen()),
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to create account. Email may already be registered.'),
+        SnackBar(
+          content: Text(errorMessage ?? 'Failed to create account. Please try again.'),
           backgroundColor: Colors.red,
         ),
       );
