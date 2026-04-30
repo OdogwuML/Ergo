@@ -1,10 +1,29 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/config.dart';
 
 class BuildingService {
   static const String _tokenKey = 'auth_token';
+
+  Future<String?> uploadBuildingPhoto(String filepath) async {
+    try {
+      final file = File(filepath);
+      final fileName = 'building_${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
+      
+      final String path = await Supabase.instance.client.storage.from('buildings').upload(
+            fileName,
+            file,
+          );
+          
+      return Supabase.instance.client.storage.from('buildings').getPublicUrl(fileName);
+    } catch (e) {
+      print('Upload building photo error: $e');
+      return null;
+    }
+  }
 
   Future<List<dynamic>> getBuildings() async {
     try {
@@ -38,6 +57,12 @@ class BuildingService {
     required String name,
     required String address,
     required int totalUnits,
+    required int pricePerUnit,
+    bool hasPool = false,
+    bool hasGym = false,
+    bool hasParking = false,
+    bool hasCctv = false,
+    String? photoUrl,
   }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -55,6 +80,12 @@ class BuildingService {
           'name': name,
           'address': address,
           'total_units': totalUnits,
+          'price_per_unit': pricePerUnit,
+          'has_pool': hasPool,
+          'has_gym': hasGym,
+          'has_parking': hasParking,
+          'has_cctv': hasCctv,
+          if (photoUrl != null) 'photo_url': photoUrl,
         }),
       );
 

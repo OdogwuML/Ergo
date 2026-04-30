@@ -22,3 +22,21 @@ Thumbs.db
 
 # Go
 /vendor/
+
+# Design Docs
+Design Guideline/
+
+# Agent context
+.agent/
+
+# Binaries
+*.exe
+tools/cmd/server/main
+tools/server
+
+# Flutter
+mobile/ergo_mobile/.dart_tool/
+mobile/ergo_mobile/.flutter-plugins
+mobile/ergo_mobile/.flutter-plugins-dependencies
+mobile/ergo_mobile/.packages
+mobile/ergo_mobile/build/

@@ -7,7 +7,17 @@ import 'screens/landlord/dashboard_screen.dart';
 
 import 'screens/auth/signup_screen.dart';
 
-void main() {
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'utils/config.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  await Supabase.initialize(
+    url: Config.supabaseUrl,
+    anonKey: Config.supabaseAnonKey,
+  );
+
   runApp(const ErgoApp());
 }
 

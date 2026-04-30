@@ -34,8 +34,13 @@ type AcceptInviteRequest struct {
 type CreateBuildingRequest struct {
 	Name       string `json:"name"`
 	Address    string `json:"address"`
-	TotalUnits int    `json:"total_units"`
-	PhotoURL   string `json:"photo_url,omitempty"`
+	TotalUnits   int    `json:"total_units"`
+	PricePerUnit int64  `json:"price_per_unit"`
+	PhotoURL     string `json:"photo_url,omitempty"`
+	HasPool    bool   `json:"has_pool"`
+	HasGym     bool   `json:"has_gym"`
+	HasParking bool   `json:"has_parking"`
+	HasCCTV    bool   `json:"has_cctv"`
 }
 
 type UpdateBuildingRequest struct {

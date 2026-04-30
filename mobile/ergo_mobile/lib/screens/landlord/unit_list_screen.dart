@@ -19,12 +19,18 @@ class _UnitListScreenState extends State<UnitListScreen> {
   @override
   void initState() {
     super.initState();
+    debugPrint('DEBUG: UnitListScreen building keys: ${widget.building.keys.toList()}');
+    debugPrint('DEBUG: photo_url value: ${widget.building['photo_url']}');
     _refreshUnits();
   }
 
   void _refreshUnits() {
+    debugPrint('DEBUG: Calling getUnits for building: ${widget.building['id']}');
     setState(() {
-      _unitsFuture = _buildingService.getUnits(widget.building['id']);
+      _unitsFuture = _buildingService.getUnits(widget.building['id']).then((units) {
+        debugPrint('DEBUG: Received ${units.length} units from API');
+        return units;
+      });
     });
   }
 
@@ -61,78 +67,217 @@ class _UnitListScreenState extends State<UnitListScreen> {
           final units = snapshot.data ?? [];
 
           if (units.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+            return RefreshIndicator(
+              onRefresh: () async {
+                _refreshUnits();
+                await _unitsFuture;
+              },
+              child: ListView(
                 children: [
-                  const Icon(Icons.door_sliding_outlined, size: 64, color: Colors.black12),
-                  const SizedBox(height: 16),
-                  const Text('No units added yet', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  const SizedBox(height: 4),
-                  const Text('Tap the + button to add units to this property.', style: TextStyle(color: Colors.black54)),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () => _navigateToAddUnit(context),
-                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white),
-                    child: const Text('Add First Unit'),
+                   SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+                   Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.door_sliding_outlined, size: 64, color: Colors.black12),
+                        const SizedBox(height: 16),
+                        const Text('No units added yet', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        const SizedBox(height: 4),
+                        const Text('Pull down to refresh or add manually.', style: TextStyle(color: Colors.black54)),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: () => _navigateToAddUnit(context),
+                          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.white),
+                          child: const Text('Add First Unit'),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             );
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
+          return RefreshIndicator(
+            onRefresh: () async {
+              _refreshUnits();
+              await _unitsFuture;
+            },
+            child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
             itemCount: units.length,
             itemBuilder: (context, index) {
               final unit = units[index];
               final bool isOccupied = unit['status'] == 'occupied';
+              final String unitNumber = unit['unit_number'];
+              final String rent = '₦${(unit['rent_amount'] / 100).toStringAsFixed(0)}';
               
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                elevation: 0,
-                borderOnForeground: true,
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  leading: CircleAvatar(
-                    backgroundColor: isOccupied ? AppTheme.primary.withOpacity(0.1) : Colors.green.withOpacity(0.1),
-                    child: Icon(
-                      Icons.meeting_room,
-                      color: isOccupied ? AppTheme.primary : Colors.green,
+              return Container(
+                margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
                     ),
-                  ),
-                  title: Text(
-                    unit['unit_number'],
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    '₦${(unit['rent_amount'] / 100).toStringAsFixed(0)} / month',
-                    style: const TextStyle(color: Colors.black54),
-                  ),
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isOccupied ? AppTheme.primary.withOpacity(0.1) : Colors.green.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      isOccupied ? 'OCCUPIED' : 'VACANT',
-                      style: TextStyle(
-                        color: isOccupied ? AppTheme.primary : Colors.green,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: isOccupied 
+                                ? AppTheme.primary.withOpacity(0.08) 
+                                : const Color(0xFFE8F5E9),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: (widget.building['photo_url'] != null && widget.building['photo_url'].toString().isNotEmpty)
+                                ? Image.network(
+                                    widget.building['photo_url'],
+                                    width: 56,
+                                    height: 56,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      debugPrint('DEBUG: Image load error: $error for URL: ${widget.building['photo_url']}');
+                                      return Icon(
+                                        isOccupied ? Icons.person_outline : Icons.door_front_door_outlined,
+                                        color: isOccupied ? AppTheme.primary : const Color(0xFF2E7D32),
+                                        size: 28,
+                                      );
+                                    },
+                                  )
+                                : Icon(
+                                    isOccupied ? Icons.person_outline : Icons.door_front_door_outlined,
+                                    color: isOccupied ? AppTheme.primary : const Color(0xFF2E7D32),
+                                    size: 28,
+                                  ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      unitNumber,
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: -0.5,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: isOccupied 
+                                          ? AppTheme.primary.withOpacity(0.08) 
+                                          : const Color(0xFFE8F5E9),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        isOccupied ? 'OCCUPIED' : 'VACANT',
+                                        style: TextStyle(
+                                          color: isOccupied ? AppTheme.primary : const Color(0xFF2E7D32),
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '$rent / month',
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: AppTheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                if (isOccupied) ...[
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    unit['tenant']?['full_name'] ?? 'Occupied',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.mail_outline, size: 12, color: Colors.black38),
+                                      const SizedBox(width: 4),
+                                      Text(unit['tenant']?['email'] ?? 'No email', style: const TextStyle(color: Colors.black38, fontSize: 12)),
+                                    ],
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  onTap: () {
-                    // TODO: Navigate to Unit Details or Invite Tenant
-                  },
+                    const Divider(height: 1, color: AppTheme.surfaceContainerHigh),
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: isOccupied 
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              TextButton.icon(
+                                onPressed: () {
+                                  // TODO: View Tenant Details
+                                },
+                                icon: const Icon(Icons.info_outline, size: 18),
+                                label: const Text('View Tenant Details'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppTheme.onSurfaceVariant,
+                                  textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
+                          )
+                        : SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Invitation flow coming soon!'),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.send_rounded, size: 18),
+                              label: const Text('Invite Tenant'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primary,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              ),
+                            ),
+                          ),
+                    ),
+                  ],
                 ),
               );
             },
-          );
-        },
+          ),
+        );
+      },
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppTheme.primary,

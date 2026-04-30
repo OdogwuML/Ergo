@@ -22,8 +22,13 @@ type Building struct {
 	LandlordID string    `json:"landlord_id"`
 	Name       string    `json:"name"`
 	Address    string    `json:"address"`
-	TotalUnits int       `json:"total_units"`
+	TotalUnits    int       `json:"total_units"`
+	PricePerUnit  int64     `json:"price_per_unit"`
 	PhotoURL   *string   `json:"photo_url,omitempty"`
+	HasPool    bool      `json:"has_pool"`
+	HasGym     bool      `json:"has_gym"`
+	HasParking bool      `json:"has_parking"`
+	HasCCTV    bool      `json:"has_cctv"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 }
@@ -54,9 +59,11 @@ type Unit struct {
 // UnitWithTenant includes tenant profile info for landlord views
 type UnitWithTenant struct {
 	Unit
-	TenantName  *string `json:"tenant_name,omitempty"`
-	TenantEmail *string `json:"tenant_email,omitempty"`
-	TenantPhone *string `json:"tenant_phone,omitempty"`
+	Tenant *struct {
+		FullName string `json:"full_name"`
+		Email    string `json:"email"`
+		Phone    string `json:"phone"`
+	} `json:"tenant"`
 	PaymentStatus string `json:"payment_status"` // "paid", "pending", "overdue", "vacant"
 }
 

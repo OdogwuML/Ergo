@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../app_theme.dart';
 import '../../services/dashboard_service.dart';
+import 'buildings_screen.dart';
+import 'add_building_screen.dart';
 
 class LandlordDashboardScreen extends StatefulWidget {
   const LandlordDashboardScreen({super.key});
@@ -113,192 +115,15 @@ class _LandlordDashboardScreenState extends State<LandlordDashboardScreen> {
           }
 
           final data = snapshot.data!;
-          final buildings = data['active_buildings'] as List<dynamic>? ?? [];
-          final recentPayments = data['recent_payments'] as List<dynamic>? ?? [];
-          final landlordName = (data['landlord_name'] as String? ?? 'User').split(' ').first;
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Welcome greeting from Supabase
-                Text(
-                  'Welcome, $landlordName',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Alert Banner — status pillar style with CTA
-                Container(
-                  clipBehavior: Clip.hardEdge,
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Container(width: 4, color: AppTheme.primary),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Finish your setup to start collecting rent',
-                                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: AppTheme.onSurface),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Verification is needed to enable automated payouts and lease tracking.',
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.onSurfaceVariant),
-                                ),
-                                const SizedBox(height: 12),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.primary,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    'Link Bank Account',
-                                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // Stat: Monthly Rent Revenue — gradient card
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
-                    gradient: const LinearGradient(
-                      colors: [AppTheme.primary, AppTheme.primaryContainer],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.primary.withOpacity(0.2),
-                        blurRadius: 24,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Monthly Rent Revenue',
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: Colors.white.withOpacity(0.9),
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        '₦${_formatAmount(data['total_collected'])}',
-                        style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: -1.0,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Stats row: Total Buildings + Occupied Units — horizontal
-                Row(
-                  children: [
-                    Expanded(
-                      child: _StatCardVertical(
-                        title: 'Total Buildings',
-                        value: '${data['total_buildings']}',
-                        trend: '+0%',
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _OccupancyCard(
-                        occupied: data['occupied_units'] ?? 0,
-                        total: data['total_units'] ?? 0,
-                      ),
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 32),
-                
-                // Pending & Recent Payments
-                Text(
-                  'Pending Payments', 
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)
-                ),
-                const SizedBox(height: 16),
-                if (recentPayments.isEmpty)
-                  const _EmptyState(title: 'No pending payments', subtitle: 'All units are up to date on rent.'),
-                if (recentPayments.isNotEmpty)
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: recentPayments.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final p = recentPayments[index];
-                      return _PaymentItem(
-                        tenant: p['users']?['full_name'] ?? 'Unknown Tenant',
-                        property: p['buildings']?['name'] ?? 'Unknown Property',
-                        amount: '₦${(p['amount'] / 100).toStringAsFixed(0)}',
-                        status: p['status'],
-                        statusColor: p['status'] == 'successful' ? AppTheme.primary : Colors.orange,
-                      );
-                    },
-                  ),
-                const SizedBox(height: 32),
-
-                // Recent Activity — dynamic from backend
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Recent Activity',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    Row(
-                      children: [
-                        _FilterChip(label: 'All', isSelected: true),
-                        const SizedBox(width: 8),
-                        _FilterChip(label: 'Payments', isSelected: false),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                ..._buildActivityItems(context, data['recent_activity'] as List<dynamic>? ?? []),
-                const SizedBox(height: 32),
-              ],
-            ),
+          return IndexedStack(
+            index: _selectedIndex,
+            children: [
+              _buildDashboardTab(context, data),
+              BuildingsScreen(data: data, onRefresh: _refreshData),
+              const _PlaceholderTab(title: 'Payments', icon: Icons.account_balance_wallet_outlined),
+              const _PlaceholderTab(title: 'Settings', icon: Icons.tune_outlined),
+            ],
           );
         },
       ),
@@ -337,7 +162,18 @@ class _LandlordDashboardScreenState extends State<LandlordDashboardScreen> {
         backgroundColor: AppTheme.primary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         onPressed: () {
-          // TODO: Navigate to add building or quick action
+          if (_selectedIndex == 1) { // Buildings Tab
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => AddBuildingScreen()),
+            ).then((_) => _refreshData());
+          } else {
+            // Default action or prompt for quick actions
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => AddBuildingScreen()),
+            ).then((_) => _refreshData());
+          }
         },
         child: const Icon(Icons.add, color: Colors.white),
       ),
@@ -396,6 +232,245 @@ class _LandlordDashboardScreenState extends State<LandlordDashboardScreen> {
       ));
     }
     return widgets;
+  }
+
+  Widget _buildDashboardTab(BuildContext context, Map<String, dynamic> data) {
+    final recentPayments = data['recent_payments'] as List<dynamic>? ?? [];
+    final pendingPayments = data['pending_payments'] as List<dynamic>? ?? [];
+    final landlordName = (data['landlord_name'] as String? ?? 'User').split(' ').first;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Welcome greeting from Supabase
+          Text(
+            'Welcome, $landlordName',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
+                ),
+          ),
+          const SizedBox(height: 20),
+
+          // Alert Banner — status pillar style with CTA
+          Container(
+            clipBehavior: Clip.hardEdge,
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(width: 4, color: AppTheme.primary),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Finish your setup to start collecting rent',
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: AppTheme.onSurface),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Verification is needed to enable automated payouts and lease tracking.',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.onSurfaceVariant),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primary,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'Link Bank Account',
+                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          // Stat: Monthly Rent Revenue — gradient card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: const LinearGradient(
+                colors: [AppTheme.primary, AppTheme.primaryContainer],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primary.withOpacity(0.2),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Monthly Rent Revenue',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: Colors.white.withOpacity(0.9),
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '₦${_formatAmount(data['total_collected'])}',
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -1.0,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Stats row: Total Buildings + Occupied Units — horizontal
+          Row(
+            children: [
+              Expanded(
+                child: _StatCardVertical(
+                  title: 'Total Buildings',
+                  value: '${data['total_buildings']}',
+                  trend: '+0%',
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _OccupancyCard(
+                  occupied: data['occupied_units'] ?? 0,
+                  total: data['total_units'] ?? 0,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 32),
+
+          // Pending Payments Section
+          Text('Pending Payments', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          if (pendingPayments.isEmpty) const _EmptyState(title: 'No pending payments', subtitle: 'All units are up to date on rent.'),
+          if (pendingPayments.isNotEmpty)
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: pendingPayments.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final p = pendingPayments[index];
+                return _PaymentItem(
+                  tenant: p['users']?['full_name'] ?? 'Unknown Tenant',
+                  property: p['buildings']?['name'] ?? 'Unknown Property',
+                  amount: '₦${(p['amount'] / 100).toStringAsFixed(0)}',
+                  status: p['status'],
+                  statusColor: Colors.orange,
+                );
+              },
+            ),
+          
+          const SizedBox(height: 32),
+
+          // Recent Collections Section
+          Text('Recent Collections', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          if (recentPayments.isEmpty) const _EmptyState(title: 'No collections yet', subtitle: 'Payments will appear here once confirmed.'),
+          if (recentPayments.isNotEmpty)
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: recentPayments.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final p = recentPayments[index];
+                return _PaymentItem(
+                  tenant: p['users']?['full_name'] ?? 'Unknown Tenant',
+                  property: p['buildings']?['name'] ?? 'Unknown Property',
+                  amount: '₦${(p['amount'] / 100).toStringAsFixed(0)}',
+                  status: 'Paid',
+                  statusColor: AppTheme.primary,
+                );
+              },
+            ),
+          const SizedBox(height: 32),
+
+          // Recent Activity — dynamic from backend
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Recent Activity',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              Row(
+                children: [
+                  _FilterChip(label: 'All', isSelected: true),
+                  const SizedBox(width: 8),
+                  _FilterChip(label: 'Payments', isSelected: false),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ..._buildActivityItems(context, data['recent_activity'] as List<dynamic>? ?? []),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlaceholderTab extends StatelessWidget {
+  final String title;
+  final IconData icon;
+
+  const _PlaceholderTab({required this.title, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 64, color: AppTheme.outlineVariant),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.onSurfaceVariant,
+                ),
+          ),
+          const SizedBox(height: 8),
+          const Text('Coming soon...'),
+        ],
+      ),
+    );
   }
 }
 

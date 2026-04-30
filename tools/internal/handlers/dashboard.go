@@ -40,49 +40,74 @@ func (h *DashboardHandler) LandlordDashboard(w http.ResponseWriter, r *http.Requ
 
 	// Get buildings
 	bData, _, _ := h.client.From("buildings").Select("*", "exact", false).Eq("landlord_id", userID).Execute()
-	var buildings []models.Building
-	json.Unmarshal(bData, &buildings)
+	var buildingList []models.Building
+	json.Unmarshal(bData, &buildingList)
 
-	// Get all units across buildings
-	totalUnits := 0
-	occupiedUnits := 0
-	for _, b := range buildings {
-		uData, _, _ := h.client.From("units").Select("status", "exact", false).Eq("building_id", b.ID).Execute()
-		var units []struct {
-			Status string `json:"status"`
-		}
-		json.Unmarshal(uData, &units)
-		totalUnits += len(units)
-		for _, u := range units {
-			if u.Status == "occupied" {
-				occupiedUnits++
-			}
+	buildingIDs := make([]string, len(buildingList))
+	for i, b := range buildingList {
+		buildingIDs[i] = b.ID
+	}
+
+	// Default empty results if no buildings
+	if len(buildingIDs) == 0 {
+		respondJSON(w, http.StatusOK, models.APIResponse{
+			Success: true,
+			Data: map[string]interface{}{
+				"landlord_name":    landlordName,
+				"total_buildings":  0,
+				"total_units":      0,
+				"occupied_units":   0,
+				"total_collected":  0,
+				"total_pending":    0,
+				"recent_payments":  []interface{}{},
+				"pending_payments": []interface{}{},
+				"recent_activity":  []interface{}{},
+			},
+		})
+		return
+	}
+
+	// Get all units across buildings for stats
+	var totalUnits int
+	var occupiedUnits int
+	uData, _, _ := h.client.From("units").Select("status", "exact", false).In("building_id", buildingIDs).Execute()
+	var units []struct {
+		Status string `json:"status"`
+	}
+	json.Unmarshal(uData, &units)
+	totalUnits = len(units)
+	for _, u := range units {
+		if u.Status == "occupied" {
+			occupiedUnits++
 		}
 	}
 
-	// Get payment stats
+	// Get payment totals
 	var totalCollected int64
 	var totalPending int64
-	for _, b := range buildings {
-		pData, _, _ := h.client.From("payments").Select("amount, status", "exact", false).Eq("building_id", b.ID).Execute()
-		var payments []struct {
-			Amount int64  `json:"amount"`
-			Status string `json:"status"`
-		}
-		json.Unmarshal(pData, &payments)
-		for _, p := range payments {
-			if p.Status == "successful" {
-				totalCollected += p.Amount
-			} else if p.Status == "pending" {
-				totalPending += p.Amount
-			}
+	pData, _, _ := h.client.From("payments").Select("amount, status", "exact", false).In("building_id", buildingIDs).Execute()
+	var payments []struct {
+		Amount int64  `json:"amount"`
+		Status string `json:"status"`
+	}
+	json.Unmarshal(pData, &payments)
+	for _, p := range payments {
+		if p.Status == "successful" {
+			totalCollected += p.Amount
+		} else if p.Status == "pending" {
+			totalPending += p.Amount
 		}
 	}
 
-	// Recent payments
-	rpData, _, _ := h.client.From("payments").Select("*, users!payments_tenant_id_fkey(full_name), buildings(name), units(unit_number)", "exact", false).Eq("status", "successful").Order("created_at", &postgrest.OrderOpts{Ascending: false}).Limit(5, "").Execute()
+	// Recent Successful Payments (Recent Collections)
+	rpData, _, _ := h.client.From("payments").Select("*, users!payments_tenant_id_fkey(full_name), buildings(name), units(unit_number)", "exact", false).In("building_id", buildingIDs).Eq("status", "successful").Order("created_at", &postgrest.OrderOpts{Ascending: false}).Limit(5, "").Execute()
 	var recentPayments []json.RawMessage
 	json.Unmarshal(rpData, &recentPayments)
+
+	// Actual Pending Payments
+	ppData, _, _ := h.client.From("payments").Select("*, users!payments_tenant_id_fkey(full_name), buildings(name), units(unit_number)", "exact", false).In("building_id", buildingIDs).Eq("status", "pending").Order("created_at", &postgrest.OrderOpts{Ascending: false}).Limit(5, "").Execute()
+	var pendingPayments []json.RawMessage
+	json.Unmarshal(ppData, &pendingPayments)
 
 	// Build recent activity feed
 	var recentActivity []map[string]interface{}
@@ -99,12 +124,12 @@ func (h *DashboardHandler) LandlordDashboard(w http.ResponseWriter, r *http.Requ
 			Name string `json:"name"`
 		} `json:"buildings"`
 	}
-	paData, _, _ := h.client.From("payments").Select("amount, status, created_at, users!payments_tenant_id_fkey(full_name), buildings(name)", "exact", false).Order("created_at", &postgrest.OrderOpts{Ascending: false}).Limit(5, "").Execute()
+	paData, _, _ := h.client.From("payments").Select("amount, status, created_at, users!payments_tenant_id_fkey(full_name), buildings(name)", "exact", false).In("building_id", buildingIDs).Order("created_at", &postgrest.OrderOpts{Ascending: false}).Limit(5, "").Execute()
 	json.Unmarshal(paData, &paymentActivity)
 	for _, p := range paymentActivity {
 		recentActivity = append(recentActivity, map[string]interface{}{
 			"type":       "payment",
-			"title":      "Rent Payment Received",
+			"title":      "Rent Payment " + p.Status,
 			"subtitle":   p.Users.FullName + " • " + p.Buildings.Name,
 			"amount":     p.Amount,
 			"status":     p.Status,
@@ -122,7 +147,7 @@ func (h *DashboardHandler) LandlordDashboard(w http.ResponseWriter, r *http.Requ
 			UnitNumber string `json:"unit_number"`
 		} `json:"units"`
 	}
-	maData, _, _ := h.client.From("maintenance_requests").Select("title, status, priority, created_at, units(unit_number)", "exact", false).Order("created_at", &postgrest.OrderOpts{Ascending: false}).Limit(5, "").Execute()
+	maData, _, _ := h.client.From("maintenance_requests").Select("title, status, priority, created_at, units(unit_number)", "exact", false).In("building_id", buildingIDs).Order("created_at", &postgrest.OrderOpts{Ascending: false}).Limit(5, "").Execute()
 	json.Unmarshal(maData, &maintActivity)
 	for _, m := range maintActivity {
 		statusLabel := "Submitted"
@@ -149,7 +174,7 @@ func (h *DashboardHandler) LandlordDashboard(w http.ResponseWriter, r *http.Requ
 			UnitNumber string `json:"unit_number"`
 		} `json:"units"`
 	}
-	invData, _, _ := h.client.From("invitations").Select("status, created_at, email, units(unit_number)", "exact", false).Order("created_at", &postgrest.OrderOpts{Ascending: false}).Limit(5, "").Execute()
+	invData, _, _ := h.client.From("invitations").Select("status, created_at, email, units(unit_number)", "exact", false).Eq("landlord_id", userID).Order("created_at", &postgrest.OrderOpts{Ascending: false}).Limit(5, "").Execute()
 	json.Unmarshal(invData, &inviteActivity)
 	for _, inv := range inviteActivity {
 		title := "Tenant Invitation Sent"
@@ -169,7 +194,7 @@ func (h *DashboardHandler) LandlordDashboard(w http.ResponseWriter, r *http.Requ
 		})
 	}
 
-	// Sort by created_at desc (simple bubble — small list)
+	// Sort activity by created_at desc
 	for i := 0; i < len(recentActivity); i++ {
 		for j := i + 1; j < len(recentActivity); j++ {
 			ti := recentActivity[i]["created_at"].(string)
@@ -179,20 +204,20 @@ func (h *DashboardHandler) LandlordDashboard(w http.ResponseWriter, r *http.Requ
 			}
 		}
 	}
-	// Limit to 10 items
 	if len(recentActivity) > 10 {
 		recentActivity = recentActivity[:10]
 	}
 
 	dashboard := map[string]interface{}{
 		"landlord_name":    landlordName,
-		"total_buildings":  len(buildings),
+		"total_buildings":  len(buildingIDs),
 		"total_units":      totalUnits,
 		"occupied_units":   occupiedUnits,
 		"total_collected":  totalCollected,
 		"total_pending":    totalPending,
 		"recent_payments":  recentPayments,
-		"active_buildings": buildings,
+		"pending_payments": pendingPayments,
+		"active_buildings": buildingList,
 		"recent_activity":  recentActivity,
 	}
 
