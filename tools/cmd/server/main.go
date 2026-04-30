@@ -13,10 +13,9 @@ import (
 )
 
 func main() {
-	// Load .env file
-	err := godotenv.Load("../.env")
-	if err != nil {
-		fmt.Println("⚠️  Warning: No .env file found at ../.env. Relying on system environment variables.")
+	// Load .env file (Exact path to root from tools/cmd/server)
+	if err := godotenv.Load("../../../.env"); err != nil {
+		fmt.Println("⚠️  Warning: No .env file found at ../../../.env. Relying on system environment variables.")
 	}
 
 	// Load environment variables (strict)
@@ -95,7 +94,7 @@ func main() {
 	// ============================================
 	// STATIC FILE SERVER (frontend)
 	// ============================================
-	fs := http.FileServer(http.Dir("../web"))
+	fs := http.FileServer(http.Dir("../../../web"))
 	mux.Handle("/", fs)
 
 	// Wrap everything with CORS
